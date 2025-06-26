@@ -451,3 +451,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# macOS custom folder view settings
+.DS_Store

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <juce_audio_basics/juce_audio_basics.h> // For juce::AudioBuffer
-#include "ThirdParty/libebur128/ebur128.h" // <<< Crucial: Include the C library's header
+#include "ebur128.h" // <<< Crucial: Include the C library's header
 
 //==============================================================================
 /**

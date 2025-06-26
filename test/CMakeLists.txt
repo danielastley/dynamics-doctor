@@ -1,38 +1,49 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(AudioPluginTest)
+# REMOVED: A subdirectory should NOT have its own project() command.
+# This was redefining ${PROJECT_NAME} and breaking the link to the root project.
 
 # Signals to CMake that we want to run tests from this directory.
 enable_testing()
 
-# Creates the test console application.
+# Creates the test console application. We use the explicit name for clarity.
 set(SOURCE_FILES source/AudioProcessorTest.cpp)
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+add_executable(AudioPluginTest ${SOURCE_FILES})
 
-# Sets the necessary include directories of googletest.
-target_include_directories(${PROJECT_NAME} PRIVATE ${GOOGLETEST_SOURCE_DIR}/googletest/include)
+# --- Dependency Linking (The Main Fix) ---
 
-# Thanks to the fact that we link against the gtest_main library, we don't have to write the main function ourselves.
-target_link_libraries(${PROJECT_NAME} PRIVATE AudioPlugin GTest::gtest_main)
+# Sets the necessary include directories for googletest itself. This is correct.
+target_include_directories(AudioPluginTest PRIVATE ${GOOGLETEST_SOURCE_DIR}/googletest/include)
 
-# Enables strict C++ warnings and treats warnings as errors.
-# This needs to be set up only for your projects, not 3rd party
-set_source_files_properties(${SOURCE_FILES} PROPERTIES COMPILE_OPTIONS "${PROJECT_WARNINGS_CXX}")
+# CORRECTED: This is the most important fix.
+# We link our test executable against our main plugin target ('dynamics-doctor').
+# This makes the test target automatically inherit all of the PUBLIC dependencies
+# from the plugin, including JUCE, ebur128, include paths, and compile definitions.
+target_link_libraries(AudioPluginTest PRIVATE
+    dynamics-doctor       # <<< The crucial link to your plugin
+    GTest::gtest_main     # Links against googletest
+)
 
-# Adds googletest-specific CMake commands at our disposal.
+# REMOVED: These lines are now redundant. The correct include paths are
+# inherited automatically from the 'dynamics-doctor' target we linked against above.
+# target_include_directories(AudioPluginTest PRIVATE
+#     ${CMAKE_SOURCE_DIR}/libs/juce/modules
+#     ${CMAKE_SOURCE_DIR}/plugin/include
+# )
+
+# REMOVED: This is also redundant. The test executable will inherit the necessary
+# warning flags from the dynamics-doctor target.
+# set_source_files_properties(${SOURCE_FILES} PROPERTIES COMPILE_OPTIONS "${PROJECT_WARNINGS_CXX}")
+
+# --- Google Test Discovery ---
+
+# Adds googletest-specific CMake commands.
 include(GoogleTest)
 
-# Add all tests defined with googletest to the CMake metadata
-# so that these tests are run upon a call to ctest in the test
-# projects' binary directory.
+# Add all tests to CMake metadata so they can be run with ctest.
+# CORRECTED: Use the explicit target name 'AudioPluginTest'.
 if(CMAKE_GENERATOR STREQUAL Xcode)
-  # On macOS arm64, all binaries have to be signed before running.
-  # In local development, the linker adds an ad-hoc placeholder signature.
-  # In Xcode however, the ad-hoc signature is delayed until after the “Run Script” build phase,
-  # so the POST_BUILD command added by gtest_discover_tests cannot run.
-  # Thus, we need to delay test discovery until run time.
-  # Source: https://discourse.cmake.org/t/googletest-crash-when-using-cmake-xcode-arm64/5766/8
-  gtest_discover_tests(${PROJECT_NAME} DISCOVERY_MODE PRE_TEST)
+  gtest_discover_tests(AudioPluginTest DISCOVERY_MODE PRE_TEST)
 else()
-  gtest_discover_tests(${PROJECT_NAME})
+  gtest_discover_tests(AudioPluginTest)
 endif()

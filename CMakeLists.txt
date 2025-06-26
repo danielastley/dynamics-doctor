@@ -1,27 +1,25 @@
-
 cmake_minimum_required(VERSION 3.22)
 
 # Sets a few variables, like PROJECT_NAME
-project(WolfSoundAudioPluginTemplate)
+project(dynamics-doctor VERSION 0.1.0)
 
-# Always use the newest C++ standard on green-field projects if possible.
-# Currently, JUCE supports only C++ 20 cross-platform.
-set(CMAKE_CXX_STANDARD 23)
+# CORRECTED: Set to C++20 for guaranteed cross-platform compatibility with JUCE 8.
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # I like to download the dependencies to the same folder as the project.
-# If you want to install them system wide, set CPM_SOURCE_CACHE with the path to the dependencies
-# either as an environment variable or pass it to the cmake script with -DCPM_SOURCE_CACHE=<path>.
 set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs)
 
-# Downloads CPM if not already downloaded. CPM is an easy-to-use package manager nicely integrated with CMake.
+# Downloads CPM if not already downloaded.
 include(cmake/cpm.cmake)
 
-# This commands downloads AND configures JUCE. It sets up some variables, like JUCE_SOURCE_DIR.
+# This commands downloads AND configures JUCE.
 cpmaddpackage(
   NAME
   JUCE
   GIT_TAG
-  8.0.6
+  8.0.6 # Use the tag for JUCE 8
   VERSION
   8.0.6
   GITHUB_REPOSITORY
@@ -45,15 +43,22 @@ cpmaddpackage(
   "gtest_force_shared_crt ON"
 )
 
-# Add compiler warning utilities
-include(cmake/CompilerWarnings.cmake)
-include(cmake/Util.cmake)
+# REMOVED: Redundant and overly broad. We handle compiler options on a per-target
+# basis inside the subdirectories, which is the correct modern CMake practice.
+# include(cmake/CompilerWarnings.cmake)
+# include(cmake/Util.cmake)
+# add_compile_options(-Wno-error=old-style-cast)
 
 # Adds all the targets configured in the "plugin" folder.
+# The fixes for compiler warnings are correctly located inside this file.
 add_subdirectory(plugin)
 
-# This command allows running tests from the "build" folder (the one where CMake generates the project to).
+# This command allows running tests from the "build" folder.
 enable_testing()
 
 # Adds all the targets configured in the "test" folder.
 add_subdirectory(test)
+
+# REMOVED: This entire block was incorrect. The targets `${PROJECT_NAME}` and `ebur128`
+# are not visible in this file's scope. This code would have produced a CMake error.
+# The necessary `target_compile_options` are already correctly placed in `plugin/CMakeLists.txt`.

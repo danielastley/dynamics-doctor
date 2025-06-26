@@ -3,6 +3,7 @@
 
 namespace audio_plugin_test {
 TEST(DynamicsDoctorProcessor, Foo) {
-  audio_plugin::DynamicsDoctorProcessor processor{};
+  // Corrected line
+DynamicsDoctorProcessor processor{};
 }
 }  // namespace audio_plugin_test

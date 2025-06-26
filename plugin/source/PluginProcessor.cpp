@@ -214,13 +214,12 @@ void DynamicsDoctorProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     
     // Calculate time increment based on block size and sample rate
     double blockDuration = buffer.getNumSamples() / (internalSampleRate > 0.0 ? internalSampleRate : 44100.0);
-    
-    // Handle state transitions based on audio presence
+
     if (isAudioPresentInBlock)
     {
         // Reset timeout counter since we have audio
         timeSinceLastAudio.store(0.0);
-        
+
         // If we were in AwaitingAudio state, transition to Measuring
         if (currentStatus.load() == DynamicsStatus::AwaitingAudio)
         {
@@ -229,7 +228,7 @@ void DynamicsDoctorProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
             waitingForNextAudio.store(false);
             DBG("processBlock: Audio detected, entering Measuring state");
         }
-        
+
         // Update measurement duration counter if in Measuring state
         if (currentStatus.load() == DynamicsStatus::Measuring)
         {
@@ -238,20 +237,13 @@ void DynamicsDoctorProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     }
     else
     {
-        // If we're in Measuring state and audio stops, return to AwaitingAudio
-        if (currentStatus.load() == DynamicsStatus::Measuring)
-        {
-            currentStatus.store(DynamicsStatus::AwaitingAudio);
-            waitingForNextAudio.store(true);
-            DBG("processBlock: Audio stopped during measuring, returning to AwaitingAudio state");
-        }
-        // If we're in active state (Ok, Reduced, Loss), stay there and just increment timeout
-        else if (currentStatus.load() != DynamicsStatus::AwaitingAudio && 
-                 currentStatus.load() != DynamicsStatus::Bypassed)
+        // Only increment silence timer if not in AwaitingAudio or Bypassed
+        if (currentStatus.load() != DynamicsStatus::AwaitingAudio &&
+            currentStatus.load() != DynamicsStatus::Bypassed)
         {
             double currentTimeout = timeSinceLastAudio.load();
             timeSinceLastAudio.store(currentTimeout + blockDuration);
-            
+
             // Only transition to AwaitingAudio after 5 minutes of no audio
             if (currentTimeout + blockDuration >= AUDIO_TIMEOUT)
             {
@@ -260,6 +252,7 @@ void DynamicsDoctorProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
                 DBG("processBlock: No audio for 5 minutes, entering AwaitingAudio state");
             }
         }
+        // Do NOT immediately return to AwaitingAudio if in Measuring or Active state
     }
     
     // Handle periodic LRA updates
