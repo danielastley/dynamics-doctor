@@ -63,7 +63,16 @@ add_library(ebur128
 
 # CORRECTED: Add the include directory to your main project, not a non-existent one.
 target_include_directories(${PROJECT_NAME} PUBLIC
+    # This path is for the main ebur128.h header
     ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/libebur128/ebur128
+
+    # This NEW path is for our Windows compatibility header (sys/queue.h)
+    ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/libebur128/compat
+)
+
+# Tell our main plugin target where to find the compatibility header
+target_include_directories(dynamics-doctor PRIVATE 
+    "ThirdParty/libebur128/compat"
 )
 
 # CORRECTED: This was a typo. The command is target_link_libraries.
