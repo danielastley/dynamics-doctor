@@ -20,6 +20,14 @@ include(GNUInstallDirs)
 add_subdirectory(ebur128)
 add_subdirectory(test)
 
+# --- ADD THIS BLOCK ---
+
+# Make our compatibility directory available to the compiler for this target only.
+# This ensures that when ebur128.c asks for <sys/queue.h>, it finds our version.
+target_include_directories(ebur128 PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/compat"
+)
+
 to_yes_no(SUMMARY_HAS_QUEUE)
 
 if(ENABLE_INTERNAL_QUEUE_H)
